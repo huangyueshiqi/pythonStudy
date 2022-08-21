@@ -1,1 +1,5 @@
 ~$第6节.pptx
+sales-p/data.pkl
+sales-p/item_categories.csv
+*.csv
+*.pickle
