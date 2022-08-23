@@ -3,3 +3,7 @@ sales-p/data.pkl
 sales-p/item_categories.csv
 *.csv
 *.pickle
+/
+MachineLearningNote-master.zip
+example-git/MachineLearningNote-master/
+python-3.8.2.zip
