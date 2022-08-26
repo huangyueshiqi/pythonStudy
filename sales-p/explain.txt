@@ -1,0 +1,108 @@
+1.items 商品
+item_name  商品名字
+item_id   商品id
+item_category_id     商品类型id
+
+2.shops 商店
+shop_name  商店名字
+shop_id   商店id
+
+3.item_categories---cats   商品类目
+item_category_name    商品类型名字
+item_category_id        商品类型id
+
+4.trains   训练集   1-33月
+date---日期
+date_block_num  月份（1-33）
+shop_id   商店id
+item_id   商品id
+item_price   商品价格
+item_cnt_day  商品日销量
+
+5.test   测试集   34月
+ID   编号
+shop_id    商店id
+item_id    商品id
+
+6.结果集    34月
+ID    编号
+item_cnt_month    月销售量
+
+
+数据处理
+train-----去除价格和销量异常的数据，用中位数填充修复价格小于0的数据
+train和test ------商品名称重复的，看成一个
+
+shops ------shop_id,city_code
+cats----------item_category_id,type_code,subtype_code
+items-------item_id,item_category_id
+
+test相比train    新增了363个新的item_id
+
+
+1.matrix------date_block_num,shop_id,item_id
+
+train-----revenue-计算利润
+
+train--date,date_block_num,shop_id,item_id,item_price,item_cnt_day,item_cnt_month  
+
+groupby--聚合   agg--统计计算
+group----train-----item_cnt_month  
+'date_block_num','shop_id','item_id'分组，按item_cnt_day统计计算
+
+group--date_block_num,shop_id,item_id,item_cnt_month
+
+matrix与group左连接，增加item_cnt_month，同时按（0，20）裁剪
+
+2.test增加date_block_num=34
+matrix与test连接 
+matrix-----date_block_num,shop_id,item_id,item_cnt_month
+matrix 填充缺失值
+
+3.matrix与shops，items，cat的特征合并
+matrix ----date_block_num,shop_id,item_id,item_cnt_month,
+                 city_code,item_category_id,type_code,subtype_code
+
+4.添加滞后特征
+1,2,3,6,12
+matrix----date_block_num,shop_id,item_id,item_cnt_month,
+                 city_code,item_category_id,type_code,subtype_code,
+                item_cnt_month_lag_1, item_cnt_month_lag_2, item_cnt_month_lag_3
+                 item_cnt_month_lag_6, item_cnt_month_lag_12
+
+5.均值化处理特征
+matrix----date_block_num,shop_id,item_id,item_cnt_month,
+                 city_code,item_category_id,type_code,subtype_code,
+                item_cnt_month_lag_1, item_cnt_month_lag_2, item_cnt_month_lag_3
+                 item_cnt_month_lag_6, item_cnt_month_lag_12，date_avg_item_cnt_lag_1 
+
+同理按照不同聚合继续增加特征
+
+这些特征全是不同类型的平均月销售量，全部是按照"item_cnt_month:[mean]"聚合的
+
+6.价格趋势
+train中以商品id分组，价格聚合，得到商品平均价格列--item_avg_item_price
+加到matrix中
+train中以商品id和月份分组，价格聚合，得到商品平均价格列--date_item_avg_item_price
+加到matrix中
+matrix加入----delta_price_lag 
+
+7.上个月商店利润趋势
+matrix加入-----delta_revenue_lag_1
+
+8.
+item_last_sale
+item_shop_last_sale--以纪录距离最近一次销售之间隔了几个月，通过它可以和之前月份的数据建立关联
+item_first_sale
+item_shop_first_sale--用于表示新商品的特征，第一次销售的月份
+
+9.RMSE实际上描述的是一种离散程度,越小越好，说明稳定性好
+
+10.)目标延后处理，认为重要的就做1，2，3，6，12五个时间点的处理，不重要的就一个月
+
+构造商店和单品两两配对后在1，2，3，6，12月后item_cnt_month的特征值
+（如果有时间序列的稳定性足够强，那么可能存在着我这个月的销量在1个月两个月三个月
+半年一年后还是这个销量，例如date_block_num=1；shop_id=1；item_id=1时的销量是10，
+那么在其1，2，3，6，12月后也为10，以方便后面寻求规律）
+
+
